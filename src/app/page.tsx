@@ -110,7 +110,12 @@ export default function Home() {
       setIsProcessing(true);
       try {
         setProcessingLabel("Decoding audio\u2026");
-        const { pcm, durationSec } = await decodeToPCM(source);
+        const { pcm, durationSec } = await decodeToPCM(source, {
+          onFallback: () =>
+            setProcessingLabel(
+              "Extracting audio from video in real time \u2014 this may take as long as the clip itself\u2026"
+            ),
+        });
 
         setProcessingLabel(
           transcriber.status === "ready"

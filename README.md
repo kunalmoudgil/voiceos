@@ -153,12 +153,21 @@ scripts/
 
 ## Known limitations (honest notes)
 
-- **Video/container support for imports** depends on the browser's own
-  media demuxer (`decodeAudioData`). Standard H.264/AAC `.mp4` screen
-  recordings and common `.m4a/.mp3/.wav` work on current iOS/Android
-  browsers; exotic codecs may not. There's no bundled ffmpeg.wasm — that
-  would roughly 10x the download size, working against the "zero-cost,
-  lightweight" goal.
+- **Video/container imports (.mov, .mp4, screen recordings, etc.)** go
+  through a two-stage decode in `src/lib/audio/decode.ts`. First it tries
+  the fast path, `AudioContext.decodeAudioData()`. WebKit/Safari in
+  particular is often stricter about demuxing multi-track video containers
+  that way than it is about *playing* that exact same file — a well-known
+  platform quirk (iPhone `.mov` call/screen recordings hit this often). When
+  that happens, VoiceOS automatically falls back to playing the file muted
+  and off-screen in a hidden `<video>` element and capturing the audio in
+  realtime off the live Web Audio graph. **This fallback is bound to real
+  playback speed** — extracting audio from a 2-minute clip takes about 2
+  minutes, surfaced in the UI as "Extracting audio from video in real
+  time…". Only genuinely unsupported/corrupt files fail outright. There's
+  still no bundled ffmpeg.wasm — that would roughly 10x the download size,
+  working against the "zero-cost, lightweight" goal, and this fallback
+  covers the common cases without it.
 - **English-only by default** (`whisper-tiny.en`). Swap `STT_MODEL_ID` to a
   multilingual Whisper checkpoint (e.g. `Xenova/whisper-tiny`) for other
   languages, at a small accuracy/size trade-off.
